@@ -16,10 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.views.i18n import set_language   # ← добавили
 from main.views import home   # импортируем нашу view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("set-language/", set_language, name="set_language"),  # ← новый путь
     path('', home, name='home'),  # главная страница сайта
 ]
 
