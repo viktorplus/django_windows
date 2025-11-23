@@ -1,0 +1,49 @@
+{% load i18n %}
+{% extends "base.html" %}
+
+
+{% block title %}{% trans "Мои заметки · Django" %}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <h1 class="mb-3">{% trans "Привет, Виктор 👋" %}</h1>
+        <p class="text-muted mb-0">
+             {% trans "Это твой первый сайт на Django с красивым шаблоном и списком заметок из базы." %}
+        </p>
+    </div>
+    <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+        <a href="/admin/" class="btn btn-outline-secondary">
+            {% trans "Перейти в админку" %}
+        </a>
+    </div>
+</div>
+
+<hr class="mb-4">
+
+<h2 class="h4 mb-3">{% trans "Заметки" %}</h2>
+
+{% if notes %}
+    <div class="row g-3">
+        {% for note in notes %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card note-card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title mb-2">{{ note.title }}</h5>
+                        <p class="card-text text-muted small mb-2">
+                            {{ note.created_at|date:"d.m.Y H:i" }}
+                        </p>
+                        <p class="card-text flex-grow-1">
+                            {{ note.text|linebreaksbr }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        {% blocktrans %}Пока нет ни одной заметки. Зайди в <a href="/admin/">админ-панель</a> и создай первую 🙂{% endblocktrans %}
+    </div>
+{% endif %}
+{% endblock %}
