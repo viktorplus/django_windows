@@ -33,7 +33,8 @@ class Trade(models.Model):
     quantity = models.DecimalField(
         max_digits=20,
         decimal_places=4,
-        verbose_name="Объём (контракты/монеты)",
+        verbose_name="Маржа (USDT)",
+        help_text="Сколько маржи в USDT выделено под эту сделку.",
     )
     entry_price = models.DecimalField(
         max_digits=20,
@@ -100,6 +101,14 @@ class Trade(models.Model):
 
     def __str__(self):
         return f"{self.symbol} {self.side} @ {self.entry_price}"
+    
+    @property
+    def position_notional(self):
+        """Номинал позиции (объём) = маржа * плечо в USDT."""
+        if self.quantity is None or self.leverage is None:
+            return None
+        return self.quantity * self.leverage
+
 
     class Meta:
         verbose_name = "Сделка"

@@ -5,12 +5,131 @@
 {% block content %}
 <div class="card card-dark mb-4">
     <div class="card-body">
-        <h1 class="h4 mb-2">Журнал сделок</h1>
-        <p class="text-secondary mb-0">
-            Все сделки из базы данных Django. Новые сделки добавляются через <a href="/admin/">админ-панель</a>.
-        </p>
+        <div class="d-flex justify-content-between flex-wrap gap-3">
+            <div>
+                <h1 class="h4 mb-2">Журнал сделок</h1>
+                <p class="text-secondary mb-0">
+                    Все сделки из базы данных Django. Новые сделки добавляются через <a href="/admin/">админ-панель</a>.
+                </p>
+            </div>
+            {% if stats %}
+            <div class="text-end">
+                <div class="fw-semibold">Всего сделок: {{ stats.total_trades }}</div>
+                <div class="text-secondary small">
+                    Закрытых: {{ stats.total_closed }} · Открытых: {{ stats.total_open }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+{% if stats %}
+<div class="row mb-4 g-3">
+    <div class="col-md-4">
+        <div class="card card-dark h-100">
+            <div class="card-body">
+                <h2 class="h6 text-secondary text-uppercase mb-2">Winrate & PnL</h2>
+                <p class="mb-1">
+                    Winrate:
+                    <strong>
+                        {{ stats.winrate|floatformat:1 }}%
+                    </strong>
+                </p>
+                <p class="mb-1">
+                    Побед: <span class="text-success">{{ stats.wins }}</span>,
+                    поражений: <span class="text-danger">{{ stats.losses }}</span>,
+                    0: {{ stats.breakevens }}
+                </p>
+                <p class="mb-1">
+                    Суммарный PnL:
+                    {% if stats.pnl_sum > 0 %}
+                        <span class="pnl-positive">+{{ stats.pnl_sum }}</span>
+                    {% elif stats.pnl_sum < 0 %}
+                        <span class="pnl-negative">{{ stats.pnl_sum }}</span>
+                    {% else %}
+                        {{ stats.pnl_sum }}
+                    {% endif %}
+                </p>
+                <p class="mb-0">
+                    Средний PnL на сделку:
+                    {% if stats.avg_pnl > 0 %}
+                        <span class="pnl-positive">+{{ stats.avg_pnl|floatformat:2 }}</span>
+                    {% elif stats.avg_pnl < 0 %}
+                        <span class="pnl-negative">{{ stats.avg_pnl|floatformat:2 }}</span>
+                    {% else %}
+                        {{ stats.avg_pnl|floatformat:2 }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-dark h-100">
+            <div class="card-body">
+                <h2 class="h6 text-secondary text-uppercase mb-2">Лучшие / худшие сделки</h2>
+                {% if stats.best_trade %}
+                    <p class="mb-1">
+                        <span class="text-secondary small">Лучшая:</span><br>
+                        {{ stats.best_trade.created_at|date:"d.m.Y H:i" }},
+                        {{ stats.best_trade.symbol }}
+                        ({{ stats.best_trade.side }}) –
+                        <span class="pnl-positive">+{{ stats.best_trade.realized_pnl }}</span>
+                    </p>
+                {% else %}
+                    <p class="mb-1 text-secondary">Лучшая: —</p>
+                {% endif %}
+
+                {% if stats.worst_trade %}
+                    <p class="mb-0 mt-2">
+                        <span class="text-secondary small">Худшая:</span><br>
+                        {{ stats.worst_trade.created_at|date:"d.m.Y H:i" }},
+                        {{ stats.worst_trade.symbol }}
+                        ({{ stats.worst_trade.side }}) –
+                        <span class="pnl-negative">{{ stats.worst_trade.realized_pnl }}</span>
+                    </p>
+                {% else %}
+                    <p class="mb-0 text-secondary">Худшая: —</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-dark h-100">
+            <div class="card-body">
+                <h2 class="h6 text-secondary text-uppercase mb-2">PnL по направлению</h2>
+                {% if stats.pnl_by_side %}
+                    <ul class="list-unstyled mb-0">
+                        {% for row in stats.pnl_by_side %}
+                            <li class="mb-1">
+                                {% if row.side == "LONG" %}
+                                    <span class="badge badge-long me-1">LONG</span>
+                                {% else %}
+                                    <span class="badge badge-short me-1">SHORT</span>
+                                {% endif %}
+                                сделок: {{ row.count }},
+                                PnL:
+                                {% if row.total_pnl > 0 %}
+                                    <span class="pnl-positive">+{{ row.total_pnl }}</span>
+                                {% elif row.total_pnl < 0 %}
+                                    <span class="pnl-negative">{{ row.total_pnl }}</span>
+                                {% else %}
+                                    {{ row.total_pnl }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="mb-0 text-secondary">Пока нет закрытых сделок с PnL.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 
 {% if trades %}
 <div class="card card-dark">
@@ -24,7 +143,8 @@
                     <th scope="col">Пара</th>
                     <th scope="col">Напр.</th>
                     <th scope="col">Плечо</th>
-                    <th scope="col">Объём</th>
+                    <th scope="col">Маржа (USDT)</th>
+                    <th scope="col">Номинал (USDT)</th>
                     <th scope="col">Вход</th>
                     <th scope="col">SL</th>
                     <th scope="col">TP1/TP2/TP3</th>
@@ -48,7 +168,15 @@
                         </td>
                         <td>{{ trade.leverage }}x</td>
                         <td>{{ trade.quantity }}</td>
+                        <td>
+                            {% if trade.position_notional %}
+                                {{ trade.position_notional }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
                         <td>{{ trade.entry_price }}</td>
+
                         <td>
                             {% if trade.stop_loss %}
                                 {{ trade.stop_loss }}
