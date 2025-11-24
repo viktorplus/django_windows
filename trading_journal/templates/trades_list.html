@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Журнал сделок · Trading Journal{% endblock %}
+
+{% block content %}
+<div class="card card-dark mb-4">
+    <div class="card-body">
+        <h1 class="h4 mb-2">Журнал сделок</h1>
+        <p class="text-secondary mb-0">
+            Все сделки из базы данных Django. Новые сделки добавляются через <a href="/admin/">админ-панель</a>.
+        </p>
+    </div>
+</div>
+
+{% if trades %}
+<div class="card card-dark">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 align-middle">
+                <thead>
+                <tr>
+                    <th scope="col">Дата</th>
+                    <th scope="col">Биржа</th>
+                    <th scope="col">Пара</th>
+                    <th scope="col">Напр.</th>
+                    <th scope="col">Плечо</th>
+                    <th scope="col">Объём</th>
+                    <th scope="col">Вход</th>
+                    <th scope="col">SL</th>
+                    <th scope="col">TP1/TP2/TP3</th>
+                    <th scope="col">Статус</th>
+                    <th scope="col">P&L (USDT)</th>
+                    <th scope="col">Комментарий</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for trade in trades %}
+                    <tr>
+                        <td>{{ trade.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ trade.exchange }}</td>
+                        <td>{{ trade.symbol }}</td>
+                        <td>
+                            {% if trade.side == "LONG" %}
+                                <span class="badge badge-long">LONG</span>
+                            {% else %}
+                                <span class="badge badge-short">SHORT</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ trade.leverage }}x</td>
+                        <td>{{ trade.quantity }}</td>
+                        <td>{{ trade.entry_price }}</td>
+                        <td>
+                            {% if trade.stop_loss %}
+                                {{ trade.stop_loss }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if trade.take_profit_1 %}TP1: {{ trade.take_profit_1 }}{% endif %}
+                            {% if trade.take_profit_2 %}<br>TP2: {{ trade.take_profit_2 }}{% endif %}
+                            {% if trade.take_profit_3 %}<br>TP3: {{ trade.take_profit_3 }}{% endif %}
+                            {% if not trade.take_profit_1 and not trade.take_profit_2 and not trade.take_profit_3 %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>{{ trade.get_status_display }}</td>
+                        <td>
+                            {% if trade.realized_pnl %}
+                                {% if trade.realized_pnl > 0 %}
+                                    <span class="pnl-positive">+{{ trade.realized_pnl }}</span>
+                                {% elif trade.realized_pnl < 0 %}
+                                    <span class="pnl-negative">{{ trade.realized_pnl }}</span>
+                                {% else %}
+                                    {{ trade.realized_pnl }}
+                                {% endif %}
+                            {% else %}
+                                {% if trade.status == "OPEN" %}
+                                    <span class="text-secondary">Открыта</span>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td style="max-width: 220px; white-space: pre-wrap;">
+                            {{ trade.comment|default:"" }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card card-dark">
+    <div class="card-body">
+        <p class="mb-0">
+            Пока нет ни одной сделки. Зайди в <a href="/admin/">админку</a> и создай первую.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
